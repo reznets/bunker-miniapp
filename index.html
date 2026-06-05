@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бункер</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #1e1e1e);
+            color: var(--tg-theme-text-color, #ffffff);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .user-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .user-id {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-bottom: 16px;
+        }
+        
+        .info {
+            font-size: 16px;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+        
+        button {
+            background: var(--tg-theme-button-color, #4a90e2);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        button:active {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ БУНКЕР</h1>
+        <div class="card">
+            <div class="user-name" id="userName">Загрузка...</div>
+            <div class="user-id" id="userId"></div>
+            <div class="info">
+                ✅ Mini App работает!<br>
+                Это твой первый успешный запуск.
+            </div>
+            <button onclick="showAlert()">Тыкни меня</button>
+        </div>
+    </div>
+
+    <script>
+        // Инициализируем Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Получаем данные пользователя
+        const user = tg.initDataUnsafe?.user;
+        
+        if (user) {
+            document.getElementById('userName').textContent = `Привет, ${user.first_name}!`;
+            document.getElementById('userId').textContent = `ID: ${user.id}`;
+        } else {
+            document.getElementById('userName').textContent = 'Привет!';
+            document.getElementById('userId').textContent = '(данные пользователя недоступны)';
+        }
+        
+        function showAlert() {
+            tg.showAlert('🎉 Поздравляю! Mini App работает идеально!');
+        }
+    </script>
+</body>
+</html>
