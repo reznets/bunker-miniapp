@@ -2,119 +2,355 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Бункер</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--tg-theme-bg-color, #1e1e1e);
             color: var(--tg-theme-text-color, #ffffff);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 16px;
+            padding-bottom: 80px;
         }
         
-        .container {
+        .header {
             text-align: center;
-            max-width: 400px;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
         }
         
-        h1 {
-            font-size: 32px;
-            margin-bottom: 20px;
+        .header h1 {
+            font-size: 28px;
             background: linear-gradient(45deg, #ff6b6b, #feca57);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
-        .card {
+        .nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .nav-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
+            background: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            color: var(--tg-theme-text-color, #fff);
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .nav-btn.active {
+            background: var(--tg-theme-button-color, #4a90e2);
+            color: var(--tg-theme-button-text-color, #fff);
+        }
+        
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        .my-card {
             background: var(--tg-theme-secondary-bg-color, #2a2a2a);
             border-radius: 16px;
-            padding: 24px;
-            margin-top: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        
-        .user-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        
-        .user-id {
-            font-size: 14px;
-            opacity: 0.6;
+            padding: 20px;
             margin-bottom: 16px;
         }
         
-        .info {
-            font-size: 16px;
-            opacity: 0.8;
-            line-height: 1.5;
+        .my-card h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            text-align: center;
         }
         
-        button {
-            background: var(--tg-theme-button-color, #4a90e2);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
+        .char-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .char-row:last-child { border-bottom: none; }
+        
+        .char-label {
+            font-size: 14px;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .char-value {
+            font-size: 15px;
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+        }
+        
+        .char-value.hidden {
+            opacity: 0.4;
+            font-style: italic;
+        }
+        
+        .player-block {
+            background: var(--tg-theme-secondary-bg-color, #2a2a2a);
             border-radius: 12px;
-            padding: 14px 28px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
         }
         
-        button:active {
-            opacity: 0.8;
+        .player-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .player-char {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 14px;
+        }
+        
+        .player-char .label { opacity: 0.7; }
+        .player-char .value { font-weight: 500; }
+        .player-char .value.hidden { opacity: 0.3; }
+        
+        .scenario-card {
+            background: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .scenario-card h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+        
+        .scenario-item {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .scenario-item:last-child { border-bottom: none; }
+        
+        .scenario-item .label {
+            font-size: 13px;
+            opacity: 0.6;
+            margin-bottom: 4px;
+        }
+        
+        .scenario-item .value {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.6;
+        }
+        
+        .error {
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid #ff6b6b;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            color: #ff6b6b;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
         <h1>🛡️ БУНКЕР</h1>
-        <div class="card">
-            <div class="user-name" id="userName">Загрузка...</div>
-            <div class="user-id" id="userId"></div>
-            <div class="info">
-                ✅ Mini App работает!<br>
-                Это твой первый успешный запуск.
-            </div>
-            <button onclick="showAlert()">Тыкни меня</button>
-        </div>
+    </div>
+
+    <div class="nav">
+        <button class="nav-btn active" onclick="showScreen('card', event)">🃏 Карточка</button>
+        <button class="nav-btn" onclick="showScreen('table', event)">📊 Стол</button>
+        <button class="nav-btn" onclick="showScreen('scenario', event)">🌍 Сценарий</button>
+    </div>
+
+    <div id="screen-card" class="screen active">
+        <div id="card-content" class="loading">Загрузка...</div>
+    </div>
+
+    <div id="screen-table" class="screen">
+        <div id="table-content" class="loading">Загрузка...</div>
+    </div>
+
+    <div id="screen-scenario" class="screen">
+        <div id="scenario-content" class="loading">Загрузка...</div>
     </div>
 
     <script>
-        // Инициализируем Telegram Web App
+        const API_BASE = 'https://advisor-attend-runtime-once.trycloudflare.com';
+
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        
-        // Получаем данные пользователя
+
         const user = tg.initDataUnsafe?.user;
-        
-        if (user) {
-            document.getElementById('userName').textContent = `Привет, ${user.first_name}!`;
-            document.getElementById('userId').textContent = `ID: ${user.id}`;
-        } else {
-            document.getElementById('userName').textContent = 'Привет!';
-            document.getElementById('userId').textContent = '(данные пользователя недоступны)';
+        const userId = user?.id;
+
+        const CHAR_LABELS = {
+            profession: '👨‍⚕️ Профессия',
+            gender_age: '👤 Пол и возраст',
+            health: '❤️ Здоровье',
+            phobia: '😱 Фобия',
+            hobby: '🎨 Хобби',
+            baggage: '🎒 Багаж',
+            fact1: '💡 Факт 1',
+            fact2: '💡 Факт 2'
+        };
+
+        function showScreen(name, event) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`screen-${name}`).classList.add('active');
+            if (event) event.target.classList.add('active');
+            
+            if (name === 'card') loadCard();
+            if (name === 'table') loadTable();
+            if (name === 'scenario') loadScenario();
         }
-        
-        function showAlert() {
-            tg.showAlert('🎉 Поздравляю! Mini App работает идеально!');
+
+        async function fetchAPI(url) {
+            try {
+                const res = await fetch(API_BASE + url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (e) {
+                console.error('API error:', e);
+                return null;
+            }
         }
+
+        async function loadCard() {
+            const el = document.getElementById('card-content');
+            if (!userId) {
+                el.innerHTML = '<div class="error">Не удалось получить данные пользователя</div>';
+                return;
+            }
+            
+            el.innerHTML = '<div class="loading">Загрузка...</div>';
+            const data = await fetchAPI(`/api/my_card/${userId}`);
+            
+            if (!data) {
+                el.innerHTML = '<div class="error">Карточка не найдена. Начни игру в боте!</div>';
+                return;
+            }
+
+            let html = `<div class="my-card"><h2>${data.name}</h2>`;
+            
+            for (const [key, label] of Object.entries(CHAR_LABELS)) {
+                const value = data[key];
+                const isOpened = data.opened.includes(key);
+                const displayValue = value || '--';
+                const hiddenClass = !isOpened ? 'hidden' : '';
+                
+                html += `
+                    <div class="char-row">
+                        <span class="char-label">${label}</span>
+                        <span class="char-value ${hiddenClass}">${displayValue}</span>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            el.innerHTML = html;
+        }
+
+        async function loadTable() {
+            const el = document.getElementById('table-content');
+            el.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            const data = await fetchAPI('/api/table');
+            
+            if (!data || !data.players.length) {
+                el.innerHTML = '<div class="error">Нет данных. Игра ещё не началась.</div>';
+                return;
+            }
+
+            let html = '';
+            
+            for (const player of data.players) {
+                html += `<div class="player-block">`;
+                html += `<div class="player-name">👤 ${player.name}</div>`;
+                
+                for (const [key, label] of Object.entries(CHAR_LABELS)) {
+                    const value = player[key];
+                    const isOpened = player.opened.includes(key);
+                    const displayValue = value || '--';
+                    const hiddenClass = !isOpened ? 'hidden' : '';
+                    
+                    html += `
+                        <div class="player-char">
+                            <span class="label">${label}</span>
+                            <span class="value ${hiddenClass}">${displayValue}</span>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            }
+            
+            el.innerHTML = html;
+        }
+
+        async function loadScenario() {
+            const el = document.getElementById('scenario-content');
+            el.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            const data = await fetchAPI('/api/scenario');
+            
+            if (!data) {
+                el.innerHTML = '<div class="error">Сценарий ещё не сгенерирован</div>';
+                return;
+            }
+
+            el.innerHTML = `
+                <div class="scenario-card">
+                    <h2>🌪️ КАТАСТРОФА</h2>
+                    <div class="scenario-item">
+                        <div class="label">Катастрофа</div>
+                        <div class="value">${data.disaster}</div>
+                    </div>
+                    <div class="scenario-item">
+                        <div class="label">Время в бункере</div>
+                        <div class="value">${data.time_in_bunker}</div>
+                    </div>
+                    <div class="scenario-item">
+                        <div class="label">Местонахождение</div>
+                        <div class="value">${data.location}</div>
+                    </div>
+                    <div class="scenario-item">
+                        <div class="label">Население Земли</div>
+                        <div class="value">${data.population}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        loadCard();
     </script>
 </body>
 </html>
