@@ -232,7 +232,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://nine-tables-fold.loca.lt';
+        const API_BASE = 'https://empty-baths-judge.loca.lt';
 
         const tg = window.Telegram.WebApp;
         tg.ready();
@@ -318,16 +318,40 @@
             }
             
             el.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            // Сначала проверяем статус игрока
+            const status = await fetchAPI(`/api/player_status/${userId}`);
+            
+            if (!status) {
+                el.innerHTML = '<div class="error">Ошибка соединения с сервером</div>';
+                return;
+            }
+            
+            if (status.status === 'kicked') {
+                el.innerHTML = `<div class="error">❌ ${status.message}</div>`;
+                return;
+            }
+            
+            if (status.status === 'waiting') {
+                el.innerHTML = `<div class="error" style="background: rgba(254, 202, 87, 0.15); border-color: #feca57; color: #feca57;">⏳ ${status.message}</div>`;
+                return;
+            }
+            
+            if (status.status === 'lobby') {
+                el.innerHTML = `<div class="error" style="background: rgba(74, 144, 226, 0.15); border-color: #4a90e2; color: #4a90e2;">⏳ ${status.message}</div>`;
+                return;
+            }
+            
+            // Если в игре — загружаем карточку
             const data = await fetchAPI(`/api/my_card/${userId}`);
             
             if (!data) {
-                el.innerHTML = '<div class="error">Карточка не найдена. Начни игру в боте!</div>';
+                el.innerHTML = '<div class="error">Карточка не найдена.</div>';
                 return;
             }
         
             let html = `<div class="my-card"><h2>${data.name}</h2>`;
             
-            // Обычные характеристики (с кнопкой открытия)
             for (const [key, label] of Object.entries(CHAR_LABELS)) {
                 const value = data[key] || '--';
                 const isOpened = data.opened.includes(key);
@@ -348,7 +372,6 @@
             
             html += '</div>';
             
-            // Карты действий — отдельным блоком
             html += `<div class="my-card" style="border: 2px solid rgba(255, 202, 87, 0.3);">
                 <h2 style="color: #feca57;">⚡ Карты действий</h2>`;
             
