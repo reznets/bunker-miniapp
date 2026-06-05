@@ -235,7 +235,12 @@
 
         async function fetchAPI(url) {
             try {
-                const res = await fetch(API_BASE + url);
+                const res = await fetch(API_BASE + url, {
+                    headers: {
+                        'bypass-tunnel-reminder': 'true',
+                        'User-Agent': 'BunkerApp'
+                    }
+                });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return await res.json();
             } catch (e) {
