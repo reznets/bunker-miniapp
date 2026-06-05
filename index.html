@@ -81,28 +81,57 @@
             align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            gap: 8px;
         }
         
         .char-row:last-child { border-bottom: none; }
         
+        .char-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
         .char-label {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.7;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 2px;
         }
         
         .char-value {
             font-size: 15px;
             font-weight: 500;
-            text-align: right;
-            max-width: 60%;
+            word-wrap: break-word;
         }
         
         .char-value.hidden {
             opacity: 0.4;
             font-style: italic;
+        }
+        
+        .open-btn {
+            background: linear-gradient(45deg, #4a90e2, #357abd);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .open-btn:active { opacity: 0.7; }
+        .open-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .opened-badge {
+            background: rgba(76, 217, 100, 0.2);
+            color: #4cd964;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
         }
         
         .player-block {
@@ -125,10 +154,11 @@
             justify-content: space-between;
             padding: 6px 0;
             font-size: 14px;
+            gap: 8px;
         }
         
-        .player-char .label { opacity: 0.7; }
-        .player-char .value { font-weight: 500; }
+        .player-char .label { opacity: 0.7; flex-shrink: 0; }
+        .player-char .value { font-weight: 500; text-align: right; word-wrap: break-word; }
         .player-char .value.hidden { opacity: 0.3; }
         
         .scenario-card {
@@ -202,7 +232,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://silent-tables-fold.loca.lt';
+        const API_BASE = 'ТВОЙ_URL_СЮДА';
 
         const tg = window.Telegram.WebApp;
         tg.ready();
@@ -221,6 +251,12 @@
             fact1: '💡 Факт 1',
             fact2: '💡 Факт 2'
         };
+        
+        // Карты действий — отдельно (не для открытия, только для просмотра)
+        const ACTION_LABELS = {
+            action1: '⚡ Карта действия 1',
+            action2: '⚡ Карта действия 2'
+        };
 
         function showScreen(name, event) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -233,19 +269,45 @@
             if (name === 'scenario') loadScenario();
         }
 
-        async function fetchAPI(url) {
+        async function fetchAPI(url, options = {}) {
             try {
                 const res = await fetch(API_BASE + url, {
+                    ...options,
                     headers: {
                         'bypass-tunnel-reminder': 'true',
-                        'User-Agent': 'BunkerApp'
+                        'Content-Type': 'application/json',
+                        ...(options.headers || {})
                     }
                 });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || `HTTP ${res.status}`);
+                }
                 return await res.json();
             } catch (e) {
                 console.error('API error:', e);
                 return null;
+            }
+        }
+
+        async function openChar(charKey) {
+            if (!userId) return;
+            
+            tg.HapticFeedback?.impactOccurred('medium');
+            
+            const result = await fetchAPI('/api/open_char', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: userId,
+                    char_key: charKey
+                })
+            });
+            
+            if (result && result.success) {
+                tg.showAlert(`✅ Открыто: ${result.value}`);
+                loadCard();
+            } else {
+                tg.showAlert('❌ Не удалось открыть. Попробуй ещё раз.');
             }
         }
 
@@ -263,19 +325,42 @@
                 el.innerHTML = '<div class="error">Карточка не найдена. Начни игру в боте!</div>';
                 return;
             }
-
+        
             let html = `<div class="my-card"><h2>${data.name}</h2>`;
             
+            // Обычные характеристики (с кнопкой открытия)
             for (const [key, label] of Object.entries(CHAR_LABELS)) {
-                const value = data[key];
+                const value = data[key] || '--';
                 const isOpened = data.opened.includes(key);
-                const displayValue = value || '--';
-                const hiddenClass = !isOpened ? 'hidden' : '';
                 
                 html += `
                     <div class="char-row">
-                        <span class="char-label">${label}</span>
-                        <span class="char-value ${hiddenClass}">${displayValue}</span>
+                        <div class="char-info">
+                            <div class="char-label">${label}</div>
+                            <div class="char-value ${!isOpened ? 'hidden' : ''}">${value}</div>
+                        </div>
+                        ${isOpened 
+                            ? '<span class="opened-badge">✓ Открыто</span>' 
+                            : `<button class="open-btn" onclick="openChar('${key}')">👁 Открыть</button>`
+                        }
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Карты действий — отдельным блоком
+            html += `<div class="my-card" style="border: 2px solid rgba(255, 202, 87, 0.3);">
+                <h2 style="color: #feca57;">⚡ Карты действий</h2>`;
+            
+            for (const [key, label] of Object.entries(ACTION_LABELS)) {
+                const value = data[key] || '--';
+                html += `
+                    <div class="char-row">
+                        <div class="char-info">
+                            <div class="char-label">${label}</div>
+                            <div class="char-value">${value}</div>
+                        </div>
                     </div>
                 `;
             }
@@ -302,15 +387,13 @@
                 html += `<div class="player-name">👤 ${player.name}</div>`;
                 
                 for (const [key, label] of Object.entries(CHAR_LABELS)) {
-                    const value = player[key];
+                    const value = player[key] || '--';
                     const isOpened = player.opened.includes(key);
-                    const displayValue = value || '--';
-                    const hiddenClass = !isOpened ? 'hidden' : '';
                     
                     html += `
                         <div class="player-char">
                             <span class="label">${label}</span>
-                            <span class="value ${hiddenClass}">${displayValue}</span>
+                            <span class="value ${!isOpened ? 'hidden' : ''}">${isOpened ? value : '--'}</span>
                         </div>
                     `;
                 }
